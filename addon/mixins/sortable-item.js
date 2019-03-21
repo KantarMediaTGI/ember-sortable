@@ -2,6 +2,8 @@ import Ember from 'ember';
 import computed from 'ember-new-computed';
 const { Mixin, $, run } = Ember;
 const { Promise } = Ember.RSVP;
+import scrollParent from '../system/scroll-parent';
+import ScrollContainer from '../system/scroll-container';
 
 export default Mixin.create({
   classNames: ['sortable-item'],
@@ -340,7 +342,7 @@ export default Mixin.create({
   maxScrollSpeed: 20,
 
   _scrollOnEdges(drag) {
-    let groupDirection = this.get('_direction');
+    let groupDirection = this.get('group.direction');
     let $element = this.$();
     let scrollContainer = new ScrollContainer(scrollParent($element)[0]);
     let itemContainer = {
