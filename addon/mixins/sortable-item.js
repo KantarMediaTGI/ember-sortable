@@ -328,7 +328,100 @@ export default Mixin.create({
     this._tellGroup('prepare');
     this.set('isDragging', true);
     this.sendAction('onDragStart', this.get('model'));
+
+    this._scrollOnEdges(drag);
   },
+
+  /**
+    The maximum scroll speed when dragging element.
+    @property maxScrollSpeed
+    @default 20
+   */
+  maxScrollSpeed: 20,
+
+  _scrollOnEdges(drag) {
+    let groupDirection = this.get('_direction');
+    let $element = this.$();
+    let scrollContainer = new ScrollContainer(scrollParent($element)[0]);
+    let itemContainer = {
+      width: $element.width(),
+      get height() {
+        return $element.height();
+      },
+      get left() {
+        return $element.offset().left;
+      },
+      get right() {
+        return this.left + this.width;
+      },
+      get top() {
+        return $element.offset().top;
+      },
+      get bottom() {
+        return this.top + this.height;
+      }
+    };
+
+    let leadingEdgeKey, trailingEdgeKey, scrollKey, pageKey;
+    if (groupDirection === 'x') {
+      leadingEdgeKey = 'left';
+      trailingEdgeKey = 'right';
+      scrollKey = 'scrollLeft';
+      pageKey = 'pageX';
+    } else {
+      leadingEdgeKey = 'top';
+      trailingEdgeKey = 'bottom';
+      scrollKey = 'scrollTop';
+      pageKey = 'pageY';
+    }
+
+    let createFakeEvent = () => {
+      if (this._pageX == null && this._pageY == null) { return; }
+      return {
+        pageX: this._pageX,
+        pageY: this._pageY
+      };
+    };
+
+    // Set a trigger padding that will start scrolling
+    // the box when the item reaches within padding pixels
+    // of the edge of the scroll container.
+    let checkScrollBounds = () => {
+      let leadingEdge = itemContainer[leadingEdgeKey];
+      let trailingEdge = itemContainer[trailingEdgeKey];
+      let scroll = scrollContainer[scrollKey]();
+
+      let delta = 0;
+      if (trailingEdge >= scrollContainer[trailingEdgeKey]) {
+        delta = trailingEdge - scrollContainer[trailingEdgeKey];
+      } else if (leadingEdge <= scrollContainer[leadingEdgeKey]) {
+        delta = leadingEdge - scrollContainer[leadingEdgeKey];
+      }
+
+      if (delta !== 0) {
+        let speed = this.get('maxScrollSpeed');
+        delta = Math.min(Math.max(delta, -1 * speed), speed);
+
+        delta = scrollContainer[scrollKey](scroll + delta) - scroll;
+
+        let event = createFakeEvent();
+        if (event) {
+          if (scrollContainer.isWindow) {
+            event[pageKey] += delta;
+          }
+          run(() => drag(event));
+        }
+      }
+      if (this.get('isDragging')) {
+        requestAnimationFrame(checkScrollBounds);
+      }
+    };
+
+    if (!Ember.testing) {
+      requestAnimationFrame(checkScrollBounds);
+    }
+  },
+
 
   /**
     @method _makeDragHandler
