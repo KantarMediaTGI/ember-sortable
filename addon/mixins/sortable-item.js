@@ -98,6 +98,18 @@ export default Mixin.create({
   */
   spacing: 0,
 
+   /**
+   * Tolerance, in pixels, for when sorting should start.
+   * If specified, sorting will not start until after mouse
+   * is dragged beyond distance. Can be used to allow for clicks
+   * on elements within a handle.
+   *
+   * @property distance
+   * @type Integer
+   * @default 0
+   */
+  distance: 0,
+
   /**
     True if the item transitions with animation.
     @property isAnimated
@@ -296,14 +308,33 @@ export default Mixin.create({
     event.preventDefault();
     event.stopPropagation();
 
-    let startDragListener = event => this._startDrag(event);
+    let prepareDragListener = run.bind(this, this._prepareDrag, event);
 
-    function cancelStartDragListener() {
-      $(window).off('mousemove touchmove', startDragListener);
+    function cancelPrepareDragListener() {
+      $(window).off('mousemove touchmove', prepareDragListener);
     }
 
-    $(window).one('mousemove touchmove', startDragListener);
-    $(window).one('click mouseup touchend', cancelStartDragListener);
+    $(window).one('mousemove touchmove', prepareDragListener);
+    $(window).one('click mouseup touchend', cancelPrepareDragListener);
+  },
+
+  /**
+   * Prepares for the drag event
+   *
+   * @method _prepareDrag
+   * @param {Event} startEvent JS Event object
+   * @param {Event} event JS Event object
+   * @private
+   */
+  _prepareDrag(startEvent, event) {
+    let distance = this.get('distance');
+    let dx = Math.abs(getX(startEvent) - getX(event));
+    let dy = Math.abs(getY(startEvent) - getY(event));
+
+    if (distance <= dx || distance <= dy) {
+      ['mousemove', 'touchmove'].forEach(event => window.removeEventListener(event, this.prepareDragListener));
+      this._startDrag(startEvent);
+    }
   },
 
   /**
