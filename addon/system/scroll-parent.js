@@ -1,9 +1,10 @@
 import $ from 'jquery';
 
-export default function ($element) {
+export default function ($element, $direction) {
   let position = $element.css('position');
   let excludeStaticParent = position === 'absolute';
-  let $scrollParent = $element.parents().filter(function () {
+  let $newElement = $direction === 'x' ? $('.cr-crossTab').children().parents() : $element.parents();
+  let $scrollParent = $newElement.filter(function () {
     let $parent = $(this);
     if (excludeStaticParent && $parent.css('position') === 'static') {
       return false;

@@ -344,7 +344,7 @@ export default Mixin.create({
   _scrollOnEdges(drag) {
     let groupDirection = this.get('group.direction');
     let $element = this.$();
-    let scrollContainer = new ScrollContainer(scrollParent($element)[0]);
+    let scrollContainer = new ScrollContainer(scrollParent($element, groupDirection)[0]);
     let itemContainer = {
       width: $element.width(),
       get height() {
